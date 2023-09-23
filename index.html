@@ -8,7 +8,6 @@
         body, html {
             height: 100%;
             margin: 0;
-            overflow: hidden;
         }
         #container {
             position: relative;
@@ -25,12 +24,7 @@
             left: 0;
             opacity: 0.5;
         }
-        #image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain; /* Mantém a proporção da imagem e a ajusta ao container */
-            touch-action: none; /* Desativa a ação padrão de toque para a imagem */
-        }
+
     </style>
 </head>
 <body style="padding: 10px;">
@@ -38,16 +32,16 @@
 
     <input type="file" id="imageInput" accept="image/*"><br>
     <label for="settings">Quadriculado: </label>
-    <input type="range" id="settings" min="1" max="500" step="1" value="10"><br>
+    <input type="range" id="settings" min="1" max="100" step="10" value="20"><br>
     <label for="alpha">Alpha: </label>
     <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.5"><br>
     <label for="lineColor">Cor: </label>
-    <input type="color" id="lineColor" value="#000000"><br>
-    <button id="saveButton" style="display: none;">Salvar</button>
+    <input type="color" id="lineColor" value="#000000"><br><br>
+    <button id="saveButton" style="display: none;">Salvar</button><br>
 
     <div id="container">
         <canvas id="grid"></canvas>
-        <img id="image" src="" alt="Imagem" style="display: none;">
+       <div style="display: flex;justify-content: center;"><img id="image" src="" alt="Imagem" style="display: none;"></div>
     </div>
     
 
