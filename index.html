@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imagem com Grid</title>
+    <style>
+        #container {
+            position: relative;
+            width: 600px; /* Largura e altura do container quadrado */
+            height: 600px; /* Largura e altura do container quadrado */
+            overflow: hidden;
+            display: none; /* Inicialmente oculto */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0.5;
+        }
+        #image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Mantém a proporção da imagem e a ajusta ao container */
+        }
+        #resize-handle {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            background-color: #007bff;
+            cursor: nwse-resize;
+        }
+    </style>
+</head>
+<body>
+    <input type="file" id="imageInput" accept="image/*">
+    <label for="settings">Configurações: </label>
+    <input type="range" id="settings" min="1" max="500" step="1" value="10">
+    <label for="alpha">Alpha: </label>
+    <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.5">
+    <label for="lineColor">Cor das Linhas: </label>
+    <input type="color" id="lineColor" value="#000000">
+    <div id="container">
+        <img id="image" src="" alt="Imagem">
+        <canvas id="grid"></canvas>
+        <div id="resize-handle"></div>
+    </div>
+    <div>
+        <button id="saveButton" style="display: none;">Salvar</button>
+    </div>
+
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        const container = document.getElementById('container');
+        const image = document.getElementById('image');
+        const gridCanvas = document.getElementById('grid');
+        const settingsInput = document.getElementById('settings');
+        const alphaInput = document.getElementById('alpha');
+        const lineColorInput = document.getElementById('lineColor');
+        const imageInput = document.getElementById('imageInput');
+        const saveButton = document.getElementById('saveButton');
+        const resizeHandle = document.getElementById('resize-handle');
+
+        let gridSize = parseInt(settingsInput.value);
+        let gridAlpha = parseFloat(alphaInput.value);
+        let lineColor = lineColorInput.value;
+        let resizing = false;
+
+        const ctx = gridCanvas.getContext('2d');
+
+        // Carrega a imagem quando o usuário seleciona uma
+        imageInput.addEventListener('change', (e) => {
+            const selectedImage = e.target.files[0];
+            if (selectedImage) {
+                const imageURL = URL.createObjectURL(selectedImage);
+                image.src = imageURL;
+                container.style.display = 'flex'; // Exibe o container
+                saveButton.style.display = 'block'; // Exibe o botão de salvar
+                drawGrid();
+            }
+        });
+
+        // Redesenha o grid com base nos valores atuais
+        function drawGrid() {
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+
+            gridCanvas.width = containerWidth;
+            gridCanvas.height = containerHeight;
+
+            ctx.clearRect(0, 0, containerWidth, containerHeight);
+            ctx.strokeStyle = `rgba(${hexToRgb(lineColor).join(', ')}, ${gridAlpha})`;
+            ctx.lineWidth = 1;
+
+            const minSize = Math.min(containerWidth, containerHeight);
+            const cellSize = minSize / gridSize;
+
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const x = i * cellSize;
+                    const y = j * cellSize;
+                    ctx.strokeRect(x, y, cellSize, cellSize);
+                }
+            }
+        }
+
+        // Atualiza o grid quando o controle deslizante é movido
+        settingsInput.addEventListener('input', () => {
+            gridSize = parseInt(settingsInput.value);
+            drawGrid();
+        });
+
+        // Atualiza o grid quando o controle deslizante alpha é movido
+        alphaInput.addEventListener('input', () => {
+            gridAlpha = parseFloat(alphaInput.value);
+            drawGrid();
+        });
+
+        // Atualiza a cor das linhas do grid quando o seletor de cor é alterado
+        lineColorInput.addEventListener('input', () => {
+            lineColor = lineColorInput.value;
+            drawGrid();
+        });
+
+        // Rotação da imagem
+        let angle = 0;
+        container.addEventListener('wheel', (e) => {
+            angle += e.deltaY * 0.02;
+            image.style.transform = `rotate(${angle}deg)`;
+            drawGrid();
+        });
+
+        // Desativa o comportamento padrão do scroll do mouse para evitar rolagem da página
+        container.addEventListener('wheel', (e) => {
+            e.preventDefault();
+        });
+
+        // Redimensiona o grid usando o mouse
+        resizeHandle.addEventListener('mousedown', (e) => {
+            resizing = true;
+            const startX = e.clientX;
+            const startY = e.clientY;
+
+            const startWidth = container.clientWidth;
+            const startHeight = container.clientHeight;
+
+            document.addEventListener('mousemove', (e) => {
+                if (resizing) {
+                    const deltaX = e.clientX - startX;
+                    const deltaY = e.clientY - startY;
+
+                    const newWidth = Math.max(100, startWidth + deltaX);
+                    const newHeight = Math.max(100, startHeight + deltaY);
+
+                    container.style.width = newWidth + 'px';
+                    container.style.height = newWidth + 'px'; // Mantém o container quadrado
+                    drawGrid();
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                resizing = false;
+            });
+        });
+
+        // Salva a imagem + grid como um arquivo JPG
+        saveButton.addEventListener('click', () => {
+            html2canvas(container).then((canvas) => {
+                const image = canvas.toDataURL('image/jpeg');
+                const a = document.createElement('a');
+                a.href = image;
+                a.download = 'imagem_com_grid.jpg';
+                a.click();
+            });
+        });
+
+        // Função para converter uma cor hexadecimal em um array de valores RGB
+        function hexToRgb(hex) {
+            const bigint = parseInt(hex.slice(1), 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return [r, g, b];
+        }
+    </script>
+</body>
+</html>
