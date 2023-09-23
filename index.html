@@ -5,15 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Imagem com Grid</title>
     <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
         #container {
             position: relative;
-            width: 600px; /* Largura e altura do container quadrado */
-            height: 600px; /* Largura e altura do container quadrado */
+            width: 100vw; /* Largura igual à largura do viewport */
+            height: 100vh; /* Altura igual à altura do viewport */
+            display: flex;
+            justify-content: center; /* Centraliza horizontalmente */
+            align-items: center; /* Centraliza verticalmente */
             overflow: hidden;
-            display: none; /* Inicialmente oculto */
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
         }
         #grid {
             position: absolute;
@@ -25,15 +29,7 @@
             width: 100%;
             height: 100%;
             object-fit: contain; /* Mantém a proporção da imagem e a ajusta ao container */
-        }
-        #resize-handle {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            width: 20px;
-            height: 20px;
-            background-color: #007bff;
-            cursor: nwse-resize;
+            touch-action: none; /* Desativa a ação padrão de toque para a imagem */
         }
     </style>
 </head>
@@ -43,16 +39,15 @@
     <input type="range" id="settings" min="1" max="500" step="1" value="10">
     <label for="alpha">Alpha: </label>
     <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.5">
-    <label for="lineColor">Cor das Linhas: </label>
+    <label for="lineColor">Cor: </label>
     <input type="color" id="lineColor" value="#000000">
+    <button id="saveButton" style="display: none;">Salvar</button>
+
     <div id="container">
-        <img id="image" src="" alt="Imagem">
         <canvas id="grid"></canvas>
-        <div id="resize-handle"></div>
+        <img id="image" src="" alt="Imagem" style="display: none;">
     </div>
-    <div>
-        <button id="saveButton" style="display: none;">Salvar</button>
-    </div>
+    
 
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script>
@@ -63,8 +58,9 @@
         const alphaInput = document.getElementById('alpha');
         const lineColorInput = document.getElementById('lineColor');
         const imageInput = document.getElementById('imageInput');
-        const saveButton = document.getElementById('saveButton');
         const resizeHandle = document.getElementById('resize-handle');
+        const saveButton = document.getElementById('saveButton');
+
 
         let gridSize = parseInt(settingsInput.value);
         let gridAlpha = parseFloat(alphaInput.value);
@@ -79,7 +75,8 @@
             if (selectedImage) {
                 const imageURL = URL.createObjectURL(selectedImage);
                 image.src = imageURL;
-                container.style.display = 'flex'; // Exibe o container
+                image.style.display = 'block'; // Exibe o container
+                container.style.display = 'block'; // Exibe o container
                 saveButton.style.display = 'block'; // Exibe o botão de salvar
                 drawGrid();
             }
@@ -93,17 +90,21 @@
             gridCanvas.width = containerWidth;
             gridCanvas.height = containerHeight;
 
+            const minSize = Math.min(containerWidth, containerHeight);
+            const cellSize = minSize / gridSize;
+
+            // Calcula o deslocamento para centralizar o grid em relação à imagem
+            const offsetX = (containerWidth - minSize) / 2;
+            const offsetY = (containerHeight - minSize) / 2;
+
             ctx.clearRect(0, 0, containerWidth, containerHeight);
             ctx.strokeStyle = `rgba(${hexToRgb(lineColor).join(', ')}, ${gridAlpha})`;
             ctx.lineWidth = 1;
 
-            const minSize = Math.min(containerWidth, containerHeight);
-            const cellSize = minSize / gridSize;
-
             for (let i = 0; i < gridSize; i++) {
                 for (let j = 0; j < gridSize; j++) {
-                    const x = i * cellSize;
-                    const y = j * cellSize;
+                    const x = offsetX + i * cellSize;
+                    const y = offsetY + j * cellSize;
                     ctx.strokeRect(x, y, cellSize, cellSize);
                 }
             }
@@ -127,45 +128,30 @@
             drawGrid();
         });
 
-        // Rotação da imagem
-        let angle = 0;
-        container.addEventListener('wheel', (e) => {
-            angle += e.deltaY * 0.02;
-            image.style.transform = `rotate(${angle}deg)`;
-            drawGrid();
+        // Rotação da imagem com toque (touch)
+        let touchStartAngle = 0;
+        let isTouching = false;
+
+        container.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                touchStartAngle = angle;
+                isTouching = true;
+            }
         });
 
-        // Desativa o comportamento padrão do scroll do mouse para evitar rolagem da página
-        container.addEventListener('wheel', (e) => {
-            e.preventDefault();
+        container.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && isTouching) {
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - e.targetTouches[0].clientX;
+                const deltaY = touch.clientY - e.targetTouches[0].clientY;
+                angle = touchStartAngle + (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
+                image.style.transform = `rotate(${angle}deg)`;
+                drawGrid();
+            }
         });
 
-        // Redimensiona o grid usando o mouse
-        resizeHandle.addEventListener('mousedown', (e) => {
-            resizing = true;
-            const startX = e.clientX;
-            const startY = e.clientY;
-
-            const startWidth = container.clientWidth;
-            const startHeight = container.clientHeight;
-
-            document.addEventListener('mousemove', (e) => {
-                if (resizing) {
-                    const deltaX = e.clientX - startX;
-                    const deltaY = e.clientY - startY;
-
-                    const newWidth = Math.max(100, startWidth + deltaX);
-                    const newHeight = Math.max(100, startHeight + deltaY);
-
-                    container.style.width = newWidth + 'px';
-                    container.style.height = newWidth + 'px'; // Mantém o container quadrado
-                    drawGrid();
-                }
-            });
-
-            document.addEventListener('mouseup', () => {
-                resizing = false;
-            });
+        container.addEventListener('touchend', () => {
+            isTouching = false;
         });
 
         // Salva a imagem + grid como um arquivo JPG
