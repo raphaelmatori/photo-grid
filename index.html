@@ -33,14 +33,16 @@
         }
     </style>
 </head>
-<body>
-    <input type="file" id="imageInput" accept="image/*">
-    <label for="settings">Configurações: </label>
-    <input type="range" id="settings" min="1" max="500" step="1" value="10">
+<body style="padding: 10px;">
+    <label for="imageInput">Selecione uma foto:</label>
+
+    <input type="file" id="imageInput" accept="image/*"><br>
+    <label for="settings">Quadriculado: </label>
+    <input type="range" id="settings" min="1" max="500" step="1" value="10"><br>
     <label for="alpha">Alpha: </label>
-    <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.5">
+    <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.5"><br>
     <label for="lineColor">Cor: </label>
-    <input type="color" id="lineColor" value="#000000">
+    <input type="color" id="lineColor" value="#000000"><br>
     <button id="saveButton" style="display: none;">Salvar</button>
 
     <div id="container">
@@ -83,32 +85,36 @@
         });
 
         // Redesenha o grid com base nos valores atuais
+        // Redesenha o grid com base nos valores atuais
         function drawGrid() {
-            const containerWidth = container.clientWidth;
-            const containerHeight = container.clientHeight;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
 
-            gridCanvas.width = containerWidth;
-            gridCanvas.height = containerHeight;
+    gridCanvas.width = containerWidth;
+    gridCanvas.height = containerHeight;
 
-            const minSize = Math.min(containerWidth, containerHeight);
-            const cellSize = minSize / gridSize;
+    const cellSize = Math.max(containerWidth, containerHeight) / gridSize;
 
-            // Calcula o deslocamento para centralizar o grid em relação à imagem
-            const offsetX = (containerWidth - minSize) / 2;
-            const offsetY = (containerHeight - minSize) / 2;
+    ctx.clearRect(0, 0, containerWidth, containerHeight);
+    ctx.strokeStyle = `rgba(${hexToRgb(lineColor).join(', ')}, ${gridAlpha})`;
+    ctx.lineWidth = 1;
 
-            ctx.clearRect(0, 0, containerWidth, containerHeight);
-            ctx.strokeStyle = `rgba(${hexToRgb(lineColor).join(', ')}, ${gridAlpha})`;
-            ctx.lineWidth = 1;
-
-            for (let i = 0; i < gridSize; i++) {
-                for (let j = 0; j < gridSize; j++) {
-                    const x = offsetX + i * cellSize;
-                    const y = offsetY + j * cellSize;
-                    ctx.strokeRect(x, y, cellSize, cellSize);
-                }
-            }
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            const x = i * cellSize;
+            const y = j * cellSize;
+            ctx.strokeRect(x, y, cellSize, cellSize);
         }
+    }
+
+    // Centraliza a imagem horizontal e verticalmente
+    const imageWidth = image.width;
+    const imageHeight = image.height;
+    const imageLeft = (containerWidth - imageWidth) / 2;
+    const imageTop = (containerHeight - imageHeight) / 2;
+    image.style.left = imageLeft + 'px';
+    image.style.top = imageTop + 'px';
+}
 
         // Atualiza o grid quando o controle deslizante é movido
         settingsInput.addEventListener('input', () => {
