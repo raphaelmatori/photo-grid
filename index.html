@@ -24,7 +24,6 @@
             left: 0;
             opacity: 0.5;
         }
-
     </style>
 </head>
 <body style="padding: 10px;">
@@ -41,10 +40,11 @@
 
     <div id="container">
         <canvas id="grid"></canvas>
-       <div style="display: flex;justify-content: center;"><img id="image" src="" alt="Imagem" style="display: none;"></div>
+        <div style="display: flex;justify-content: center;">
+            <img id="image" src="" alt="Imagem" style="display: none;">
+        </div>
     </div>
     
-
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script>
         const container = document.getElementById('container');
@@ -54,14 +54,11 @@
         const alphaInput = document.getElementById('alpha');
         const lineColorInput = document.getElementById('lineColor');
         const imageInput = document.getElementById('imageInput');
-        const resizeHandle = document.getElementById('resize-handle');
         const saveButton = document.getElementById('saveButton');
-
 
         let gridSize = parseInt(settingsInput.value);
         let gridAlpha = parseFloat(alphaInput.value);
         let lineColor = lineColorInput.value;
-        let resizing = false;
 
         const ctx = gridCanvas.getContext('2d');
 
@@ -79,36 +76,50 @@
         });
 
         // Redesenha o grid com base nos valores atuais
-        // Redesenha o grid com base nos valores atuais
         function drawGrid() {
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
 
-    gridCanvas.width = containerWidth;
-    gridCanvas.height = containerHeight;
+            gridCanvas.width = containerWidth;
+            gridCanvas.height = containerHeight;
 
-    const cellSize = Math.max(containerWidth, containerHeight) / gridSize;
+            const cellSize = Math.max(containerWidth, containerHeight) / gridSize;
 
-    ctx.clearRect(0, 0, containerWidth, containerHeight);
-    ctx.strokeStyle = `rgba(${hexToRgb(lineColor).join(', ')}, ${gridAlpha})`;
-    ctx.lineWidth = 1;
+            ctx.clearRect(0, 0, containerWidth, containerHeight);
+            ctx.strokeStyle = `rgba(${hexToRgb(lineColor).join(', ')}, ${gridAlpha})`;
+            ctx.lineWidth = 1;
 
-    for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-            const x = i * cellSize;
-            const y = j * cellSize;
-            ctx.strokeRect(x, y, cellSize, cellSize);
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const x = i * cellSize;
+                    const y = j * cellSize;
+                    ctx.strokeRect(x, y, cellSize, cellSize);
+                }
+            }
+
+            // Define o tamanho máximo da imagem com base no tamanho do gridCanvas
+            const gridWidth = gridCanvas.width;
+            const gridHeight = gridCanvas.height;
+            const imageWidth = image.width;
+            const imageHeight = image.height;
+
+            // Calcula a proporção da imagem (aspect ratio)
+            const imageAspectRatio = imageWidth / imageHeight;
+
+            // Calcula o tamanho máximo da imagem com base na largura do gridCanvas
+            const maxWidth = gridWidth;
+            const maxHeight = gridWidth / imageAspectRatio;
+
+            // Aplica o tamanho máximo à imagem
+            image.style.maxWidth = maxWidth + 'px';
+            image.style.maxHeight = maxHeight + 'px';
+
+            // Centraliza a imagem horizontal e verticalmente (se necessário)
+            const imageLeft = (gridWidth - maxWidth) / 2;
+            const imageTop = (gridHeight - maxHeight) / 2;
+            image.style.left = imageLeft + 'px';
+            image.style.top = imageTop + 'px';
         }
-    }
-
-    // Centraliza a imagem horizontal e verticalmente
-    const imageWidth = image.width;
-    const imageHeight = image.height;
-    const imageLeft = (containerWidth - imageWidth) / 2;
-    const imageTop = (containerHeight - imageHeight) / 2;
-    image.style.left = imageLeft + 'px';
-    image.style.top = imageTop + 'px';
-}
 
         // Atualiza o grid quando o controle deslizante é movido
         settingsInput.addEventListener('input', () => {
@@ -126,32 +137,6 @@
         lineColorInput.addEventListener('input', () => {
             lineColor = lineColorInput.value;
             drawGrid();
-        });
-
-        // Rotação da imagem com toque (touch)
-        let touchStartAngle = 0;
-        let isTouching = false;
-
-        container.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                touchStartAngle = angle;
-                isTouching = true;
-            }
-        });
-
-        container.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1 && isTouching) {
-                const touch = e.touches[0];
-                const deltaX = touch.clientX - e.targetTouches[0].clientX;
-                const deltaY = touch.clientY - e.targetTouches[0].clientY;
-                angle = touchStartAngle + (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
-                image.style.transform = `rotate(${angle}deg)`;
-                drawGrid();
-            }
-        });
-
-        container.addEventListener('touchend', () => {
-            isTouching = false;
         });
 
         // Salva a imagem + grid como um arquivo JPG
