@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Imagem com Grid</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body, html {
             height: 100%;
             margin: 0;
@@ -37,18 +40,18 @@
         }
     </style>
 </head>
-<body style="padding: 10px;">
-    <label for="imageInput">Selecione uma foto:</label>
-
-    <input type="file" id="imageInput" accept="image/*"><br>
-    <label for="settings">Quadriculado: </label>
-    <input type="range" id="settings" min="1" max="100" step="10" value="20"><br>
-    <label for="alpha">Alpha: </label>
-    <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.5"><br>
-    <label for="lineColor">Cor: </label>
-    <input type="color" id="lineColor" value="#000000"><br><br>
-    <button id="saveButton" style="display: none;">Salvar</button><br>
-
+<body>
+        <div style="padding: 10px;">
+        <label for="imageInput">Selecione uma foto:</label>
+        <input type="file" id="imageInput" accept="image/*"><br>
+        <label for="settings">Quadriculado: </label>
+        <input type="range" id="settings" min="1" max="100" step="10" value="20"><br>
+        <label for="alpha">Alpha: </label>
+        <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.5"><br>
+        <label for="lineColor">Cor: </label>
+        <input type="color" id="lineColor" value="#000000"><br><br>
+        <button id="saveButton" style="display: none;">Salvar</button><br>
+    </div>
     <div id="container">
         <canvas id="grid"></canvas>
         <div id="image-container">
@@ -212,7 +215,7 @@
                 imageStartX = 0;
             if(isNaN(imageStartY))
                 imageStartY = 0;
-            
+
             e.preventDefault(); // Evita a seleção de texto durante o arrasto
         }
 
