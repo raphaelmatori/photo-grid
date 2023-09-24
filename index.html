@@ -11,18 +11,29 @@
         }
         #container {
             position: relative;
-            width: 100vw; /* Largura igual à largura do viewport */
-            height: 100vh; /* Altura igual à altura do viewport */
+            width: 100vw;
+            height: 100vh;
             display: flex;
-            justify-content: center; /* Centraliza horizontalmente */
-            align-items: center; /* Centraliza verticalmente */
-            overflow: hidden;
+            justify-content: center;
+            align-items: center;
         }
         #grid {
             position: absolute;
             top: 0;
             left: 0;
             opacity: 0.5;
+            pointer-events: none; /* Impede eventos de clique no grid */
+            z-index: 1;
+        }
+        #image-container {
+            position: relative;
+        }
+        #image {
+            max-width: 80%; /* A imagem ocupa no máximo 80% do grid */
+            max-height: 80vh; /* Altura máxima de 80% da altura do viewport */
+            position: absolute;
+            cursor: move; /* Adiciona um cursor de movimento */
+            z-index: 0;
         }
     </style>
 </head>
@@ -40,7 +51,7 @@
 
     <div id="container">
         <canvas id="grid"></canvas>
-        <div style="display: flex;justify-content: center;">
+        <div id="image-container">
             <img id="image" src="" alt="Imagem" style="display: none;">
         </div>
     </div>
@@ -61,6 +72,8 @@
         let lineColor = lineColorInput.value;
 
         const ctx = gridCanvas.getContext('2d');
+        let isDragging = false;
+        let startDragX, startDragY, imageStartX, imageStartY;
 
         // Carrega a imagem quando o usuário seleciona uma
         imageInput.addEventListener('change', (e) => {
@@ -68,9 +81,9 @@
             if (selectedImage) {
                 const imageURL = URL.createObjectURL(selectedImage);
                 image.src = imageURL;
-                image.style.display = 'block'; // Exibe o container
-                container.style.display = 'block'; // Exibe o container
-                saveButton.style.display = 'block'; // Exibe o botão de salvar
+                image.style.display = 'block';
+                container.style.display = 'block';
+                saveButton.style.display = 'block';
                 drawGrid();
             }
         });
@@ -107,12 +120,12 @@
             const imageAspectRatio = imageWidth / imageHeight;
 
             // Calcula o tamanho máximo da imagem com base na largura do gridCanvas
-            const maxWidth = gridWidth;
-            const maxHeight = gridWidth / imageAspectRatio;
+            const maxWidth = gridWidth * 0.8; // 80% do gridWidth
+            const maxHeight = maxWidth / imageAspectRatio;
 
             // Aplica o tamanho máximo à imagem
-            image.style.maxWidth = maxWidth + 'px';
-            image.style.maxHeight = maxHeight + 'px';
+            image.style.width = maxWidth + 'px';
+            image.style.height = maxHeight + 'px';
 
             // Centraliza a imagem horizontal e verticalmente (se necessário)
             const imageLeft = (gridWidth - maxWidth) / 2;
@@ -139,6 +152,34 @@
             drawGrid();
         });
 
+        // Adiciona eventos de arrastar à imagem
+        image.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startDragX = e.clientX;
+            startDragY = e.clientY;
+            imageStartX = parseFloat(image.style.left);
+            imageStartY = parseFloat(image.style.top);
+
+            if(isNaN(imageStartX))
+                imageStartX = 0;
+            if(isNaN(imageStartY))
+                imageStartY = 0;
+            e.preventDefault(); // Evita a seleção de texto durante o arrasto
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - startDragX;
+                const deltaY = e.clientY - startDragY;
+                image.style.left = imageStartX + deltaX + 'px';
+                image.style.top = imageStartY + deltaY + 'px';
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
         // Salva a imagem + grid como um arquivo JPG
         saveButton.addEventListener('click', () => {
             html2canvas(container).then((canvas) => {
@@ -149,6 +190,48 @@
                 a.click();
             });
         });
+
+        // Adiciona eventos de arrastar à imagem para dispositivos de tela sensível ao toque
+        image.addEventListener('mousedown', startDrag);
+        image.addEventListener('touchstart', startDrag);
+
+        window.addEventListener('mousemove', dragImage);
+        window.addEventListener('touchmove', dragImage);
+
+        window.addEventListener('mouseup', stopDrag);
+        window.addEventListener('touchend', stopDrag);
+
+        function startDrag(e) {
+            isDragging = true;
+            startDragX = e.clientX || e.touches[0].clientX;
+            startDragY = e.clientY || e.touches[0].clientY;
+            imageStartX = parseFloat(image.style.left);
+            imageStartY = parseFloat(image.style.top);
+
+            if(isNaN(imageStartX))
+                imageStartX = 0;
+            if(isNaN(imageStartY))
+                imageStartY = 0;
+            
+            e.preventDefault(); // Evita a seleção de texto durante o arrasto
+        }
+
+        function dragImage(e) {
+            if (isDragging) {
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                const deltaX = clientX - startDragX;
+                const deltaY = clientY - startDragY;
+                
+                image.style.left = imageStartX + deltaX + 'px';
+                image.style.top = imageStartY + deltaY + 'px';
+            }
+        }
+
+        function stopDrag() {
+            isDragging = false;
+        }
+
 
         // Função para converter uma cor hexadecimal em um array de valores RGB
         function hexToRgb(hex) {
